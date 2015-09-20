@@ -17,9 +17,9 @@ public:
 
     void loadFile(const char * fileName);
 
-    void setVerts(unsigned int count, const float* verts, int src_num_componets);
-    void setNorms(unsigned int count, const float* normals, int src_num_componets);
-    void setTexCoords(unsigned int layer, unsigned int count, const float* coords, int src_num_componets);
+    void setVerts(unsigned int count, const float* verts);
+    void setNorms(unsigned int count, const float* normals);
+    void setTexCoords(unsigned int layer, unsigned int count, const float* coords);
     void setIndices(unsigned int count, const unsigned int * indices);
 
     const std::vector<glm::vec3>& getVerts();

@@ -83,7 +83,6 @@ void MeshObject::render()
     if (IndiceCnt)
     {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-        //glDrawElements(GL_TRIANGLES, IndiceCnt/*-IndexRangeStart*/, GL_UNSIGNED_INT, (const void*)(IndexRangeStart * sizeof(unsigned int)));
         glDrawElements(GL_TRIANGLES, IndexRangeEnd, GL_UNSIGNED_INT, (const void*)(IndexRangeStart * sizeof(unsigned int)));
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
@@ -102,9 +101,9 @@ void MeshObject::setMesh(const MeshBuffer& meshBuffer)
     computeBoundingBox();
 
     unsigned int vertArrayCnt = VertCnt;
-    int VertComponentCount = sizeof(glm::vec3) / sizeof(float);
-    int NormalComponentCount = sizeof(glm::vec3) / sizeof(float);
-    int UVComponentCount = sizeof(glm::vec2) / sizeof(float);
+    int VertComponentCount = sizeof(glm::vec3) / sizeof(glm::vec3::value_type);
+    int NormalComponentCount = sizeof(glm::vec3) / sizeof(glm::vec3::value_type);
+    int UVComponentCount = sizeof(glm::vec2) / sizeof(glm::vec2::value_type);
     Stride = VertComponentCount; // will always have positions
     NormOffset = 0;
     UvOffset = 0;
@@ -133,25 +132,28 @@ void MeshObject::setMesh(const MeshBuffer& meshBuffer)
     const float* pos = (float*)&Mesh.getVerts()[0];
     const float* norm = (float*)&Mesh.getNorms()[0];
     const float* uv = (float*)&Mesh.getTexCoords(0)[0];
-    float* vertArray = new float[vertArrayCnt*Stride];
-    for (int i=0, idx=0, uvidx=0; i<VertCnt; i++, idx+=4, uvidx+=2)
+    float* vertArray = new float[VertCnt*Stride];
+
+    for (int i=0, idx=0, uvidx=0; i<VertCnt; i++, idx+=3, uvidx+=2)
     {
         int vi = i*Stride;
-        for (int j=0; j<VertComponentCount; ++j)
-            vertArray[vi+j] = pos[idx+j];
+        vertArray[vi+0] = pos[idx+0];
+        vertArray[vi+1] = pos[idx+1];
+        vertArray[vi+2] = pos[idx+2];
 
         if (NormOffset)
         {
             int ni = i*Stride+NormOffset;
-            for (int j=0; j<NormalComponentCount; ++j)
-                vertArray[ni+j] = norm[idx+j];
+            vertArray[ni+0] = norm[idx+0];
+            vertArray[ni+1] = norm[idx+1];
+            vertArray[ni+2] = norm[idx+2];
         }
 
         if (UvOffset)
         {
             int ti = i*Stride+UvOffset;
-            for (int j=0; j<UVComponentCount; ++j)
-                vertArray[ti+j] = uv[idx+j];
+            vertArray[ti+0] = uv[idx+0];
+            vertArray[ti+1] = uv[idx+1];
         }
     }
 
@@ -172,7 +174,7 @@ void MeshObject::setMesh(const MeshBuffer& meshBuffer)
     // set vert buffer    
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, 
-        vertArrayCnt*Stride,
+        VertCnt * Stride,
         (GLvoid*)vertArray,
         GL_STATIC_DRAW);
 
@@ -191,7 +193,7 @@ void MeshObject::setMesh(const MeshBuffer& meshBuffer)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER,
             IndiceCnt * sizeof(GLuint),
-            (GLvoid*)meshBuffer.getIndices(),
+            (GLvoid*)Mesh.getIndices(),
             GL_STATIC_DRAW);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 

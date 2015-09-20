@@ -35,9 +35,9 @@ MeshBuffer& MeshBuffer::operator=(const MeshBuffer & ref)
     if (this == &ref) return *this;
     cleanUp();
 
-    setVerts(ref.VertCnt, (float*)&ref.Verts[0], 4);
-    setNorms(ref.VertCnt, (float*)&ref.Norms[0], 4);
-    setTexCoords(0, ref.VertCnt, (float*)&ref.TexCoords[0], 2);
+    setVerts(ref.VertCnt, (float*)&ref.Verts[0]);
+    setNorms(ref.VertCnt, (float*)&ref.Norms[0]);
+    setTexCoords(0, ref.VertCnt, (float*)&ref.TexCoords[0]);
     setIndices(ref.IdxCnt, ref.Indices);
     return *this;
 }
@@ -47,15 +47,13 @@ void MeshBuffer::loadFile(const char * fileName)
 
 }
 
-void MeshBuffer::setVerts(unsigned int count, const float* verts, int src_num_componets)
+void MeshBuffer::setVerts(unsigned int count, const float* verts)
 {
     if (!verts) return;
 
-    if (VertCnt == 0)
-    {
-        VertCnt = count;
-        Verts.reserve(VertCnt);
-    }
+    VertCnt = count;
+    Verts.resize(VertCnt);
+    int src_num_componets = 3;
 
     for (unsigned int i=0; i<VertCnt; ++i)
     {
@@ -63,12 +61,11 @@ void MeshBuffer::setVerts(unsigned int count, const float* verts, int src_num_co
         vec[0] = verts[i * src_num_componets + 0];
         vec[1] = verts[i * src_num_componets + 1];
         vec[2] = verts[i * src_num_componets + 2];
-
-        Verts.push_back(vec);
+        Verts[i] = vec;
     }
 }
 
-void MeshBuffer::setNorms(unsigned int count, const float* normals, int src_num_componets)
+void MeshBuffer::setNorms(unsigned int count, const float* normals)
 {
     if (count != VertCnt)
     {
@@ -81,6 +78,7 @@ void MeshBuffer::setNorms(unsigned int count, const float* normals, int src_num_
 
     Norms.clear();
     Norms.reserve(count);
+    int src_num_componets = 3;
 
     for (unsigned int i=0; i<VertCnt; ++i)
     {
@@ -93,7 +91,7 @@ void MeshBuffer::setNorms(unsigned int count, const float* normals, int src_num_
     }
 }
 
-void MeshBuffer::setTexCoords(unsigned int layer, unsigned int count, const float* coords, int src_num_componets)
+void MeshBuffer::setTexCoords(unsigned int layer, unsigned int count, const float* coords)
 {
     if (count != VertCnt)
     {
@@ -106,6 +104,7 @@ void MeshBuffer::setTexCoords(unsigned int layer, unsigned int count, const floa
 
     TexCoords.clear();
     TexCoords.reserve(count);
+    int src_num_componets = 2;
 
     for (unsigned int i=0; i<VertCnt; ++i)
     {
@@ -175,5 +174,6 @@ void MeshBuffer::cleanUp()
     TexCoords.clear();
 
     delete [] Indices;
+    Indices = 0;
 }
 
