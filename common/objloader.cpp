@@ -253,4 +253,3 @@ size_t ObjLoader::getAttributeByteCount(ObjLoader::attribute type)
 {
     return 0;
 }
-

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <algorithm>
-
+#include <iomanip>
 #define GLEW_NO_GLU
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -30,11 +30,17 @@ ParticlesDrawable BoidsDrawable;
 ProgramObject BoidsShader;
 
 glm::mat4x4 Camera;
+glm::mat4x4 SceneBase;
 glm::mat4x4 Projection;
 glm::mat4x4 ProjectionView;
 
+glm::vec3 ViewTarget;
+
 MeshObject FlowVolume;
 ProgramObject FlowVolumeShader;
+
+bool MousePositionCapture = false;
+glm::vec2 PrevMousePos;
 
 void errorCallback(int error, const char* description)
 {
@@ -45,14 +51,73 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
+
+    if (mods == GLFW_MOD_CONTROL && action == GLFW_RELEASE){
+        MousePositionCapture = false;
+        glfwSetCursorPosCallback(glfwWindow, nullptr);
+    }
+}
+
+void cursorCallback(GLFWwindow* window, double x, double y)
+{
+    if (MousePositionCapture){
+        glm::vec2 curr = glm::vec2(float(x), float(y));
+        glm::vec2 diff = curr - PrevMousePos;
+        PrevMousePos = curr;
+
+        glm::vec3 rotation_axis = glm::vec3(diff.y, diff.x, 0.f);
+        float mag = glm::length(rotation_axis);
+        if (mag == 0) return;
+
+        rotation_axis = rotation_axis / mag;
+        glm::mat4x4 cam = glm::mat4x4(
+            Camera[0],
+            Camera[1],
+            Camera[2],
+            glm::vec4(ViewTarget,1)
+            );
+
+        float dist = glm::length(ViewTarget - glm::vec3(Camera[3]));
+        glm::mat4x4 rot;
+        rot = glm::rotate(rot, mag * 0.001f, rotation_axis);
+        Camera = rot * cam;
+
+        glm::vec3 position = dist * glm::vec3(Camera[2]);
+        position = position * glm::mat3x3(Camera);
+        Camera[3] = glm::vec4(position, 1.f);
+        Camera[3][2] *= -1.0f;
+    }
 }
 
 void mouseCallback(GLFWwindow* window, int btn, int action, int mods)
 {
-    if (btn == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS) {
+    if (mods == GLFW_MOD_CONTROL){
+        if (btn == GLFW_MOUSE_BUTTON_1) {
+            if(action == GLFW_PRESS) {
+                double x,y;
+                glfwGetCursorPos(glfwWindow, &x, &y);
+                PrevMousePos = glm::vec2(float(x), float(y));
+                MousePositionCapture = true;
+
+                glfwSetCursorPosCallback(glfwWindow, cursorCallback);
+            }
+            if(action == GLFW_RELEASE) {
+                MousePositionCapture = false;
+                glfwSetCursorPosCallback(glfwWindow, nullptr);
+            }
+        }
     }
-    if (btn == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE) {
-    }
+}
+
+void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    float dist = glm::length(ViewTarget - glm::vec3(Camera[3]));
+    dist -= 100.f * float(yoffset);
+    glm::vec3 position = dist * -glm::vec3(Camera[2]);
+    Camera[3][0] = -glm::dot( glm::vec3(Camera[0]), position);
+    Camera[3][1] = -glm::dot( glm::vec3(Camera[1]), position);
+    Camera[3][2] =  glm::dot( glm::vec3(Camera[2]), position);
+    Camera[3][3] = 1.f;
 }
 
 void initGLFW(){
@@ -88,6 +153,7 @@ void initGLFW(){
     glfwSetKeyCallback(glfwWindow, keyCallback);
     glfwSetErrorCallback(errorCallback);
     glfwSetMouseButtonCallback(glfwWindow, mouseCallback);
+    glfwSetScrollCallback(glfwWindow, scrollCallback);
 }
 
 void initGLEW(){
@@ -131,6 +197,7 @@ void initMesh(){
     buffer.setVerts(loader.getVertCount(), loader.getPositions());
     buffer.setNorms(loader.getVertCount(), loader.getNormals());
     buffer.setIndices(loader.getIndexCount(), loader.getIndices());
+    buffer.generateFaceNormals();
     FlowVolume.init(buffer); 
  
     glEnable(GL_DEPTH_TEST);
@@ -151,9 +218,10 @@ void initView(){
     float adjacent = atan(fovy*.5f) / opposite;
     adjacent = 1.f / adjacent;
 
+    ViewTarget = glm::vec3(0);
     glm::vec3 direction(0,0,1);
     glm::vec3 eye = FlowVolume.PivotPoint + direction * adjacent;
-    Camera = glm::lookAt(eye, glm::vec3(0), glm::vec3(0,1,0));
+    Camera = glm::lookAt(eye, ViewTarget, glm::vec3(0,1,0));
 }
 
 void init(int argc, char* argv[]){
@@ -171,7 +239,7 @@ void update(){
     float deltaTime = glfwGetTime(); // get's the amount of time since last setTime
     glfwSetTime(0);
 
-    ProjectionView = Projection * Camera;
+    ProjectionView = Projection * Camera * SceneBase;
 
     // Boids.update(deltaTime);
     // BoidsDrawable.update(Boids);

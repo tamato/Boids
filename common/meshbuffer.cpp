@@ -151,6 +151,36 @@ const unsigned int * MeshBuffer::getIndices() const
     return Indices;
 }
 
+void MeshBuffer::generateFaceNormals()
+{
+    assert(Indices);
+
+    UsesNormals = true;
+    Norms.clear();
+    Norms.resize(VertCnt);
+    for (unsigned int i=0; i<IdxCnt; i+=3){
+        unsigned int idx_a = i+0;
+        unsigned int idx_b = i+1;
+        unsigned int idx_c = i+2;
+
+        unsigned int vert_idx_a = Indices[idx_a];
+        unsigned int vert_idx_b = Indices[idx_b];
+        unsigned int vert_idx_c = Indices[idx_c];
+
+        glm::vec3 vec_a = Verts[vert_idx_a];
+        glm::vec3 vec_b = Verts[vert_idx_b];
+        glm::vec3 vec_c = Verts[vert_idx_c];
+
+        glm::vec3 edge_ab = vec_b - vec_a;
+        glm::vec3 edge_ac = vec_c - vec_a;
+
+        glm::vec3 norm = glm::normalize( glm::cross( edge_ab, edge_ac ) );
+        Norms[vert_idx_a] = norm;
+        Norms[vert_idx_b] = norm;
+        Norms[vert_idx_c] = norm;
+    }
+}
+
 unsigned int MeshBuffer::getVertCnt() const
 {
     return VertCnt;

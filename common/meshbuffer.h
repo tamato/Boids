@@ -30,6 +30,8 @@ public:
     unsigned int getVertCnt() const;
     unsigned int getIdxCnt() const;
 
+    void generateFaceNormals();
+
     bool UsesNormals;
     bool UsesUVs;
     bool UsesIndices;
