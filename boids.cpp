@@ -183,9 +183,6 @@ void initBoids(){
     BoidsDrawable.init();
     
     Boids.init(10);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE);
-    glBlendEquation(GL_FUNC_ADD);
 }
 
 void initMesh(){
@@ -198,10 +195,7 @@ void initMesh(){
     buffer.setNorms(loader.getVertCount(), loader.getNormals());
     buffer.setIndices(loader.getIndexCount(), loader.getIndices());
     buffer.generateFaceNormals();
-    FlowVolume.init(buffer); 
- 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    FlowVolume.init(buffer);
 
     std::map<unsigned int, std::string> shaders;
     shaders[GL_VERTEX_SHADER] = DataDirectory + "diffuse.vert";
@@ -229,7 +223,7 @@ void init(int argc, char* argv[]){
     initGLFW();
     initGLEW();
     ogle::Debug::init();
-    // initBoids();
+    initBoids();
     initMesh();
 
     initView();
@@ -239,16 +233,34 @@ void update(){
     float deltaTime = glfwGetTime(); // get's the amount of time since last setTime
     glfwSetTime(0);
 
-    ProjectionView = Projection * Camera * SceneBase;
+    ProjectionView = Projection * Camera;
 
-    // Boids.update(deltaTime);
-    // BoidsDrawable.update(Boids);
+    Boids.update(deltaTime);
+    BoidsDrawable.update(Boids);
 }
 
 void renderBoids(){
+    glDisable(GL_DEPTH_TEST);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
+    glBlendEquation(GL_FUNC_ADD);
+
     BoidsShader.bind();
-    BoidsShader.setFloat(0.1f, "Radius");
+    BoidsShader.setFloat(100.1f, "Radius");
+    BoidsShader.setMatrix44((const float*)&ProjectionView, "ProjectionView");
     BoidsDrawable.render();
+}
+
+void renderFlowVolume(){
+    glDisable(GL_BLEND);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
+    FlowVolumeShader.bind();
+    FlowVolumeShader.setMatrix44((const float*)&ProjectionView, "ProjectionView");
+    FlowVolume.render();
 }
 
 void render(){
@@ -256,11 +268,8 @@ void render(){
     glClearDepth( 1 );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-    // renderBoids();
-
-    FlowVolumeShader.bind();
-    FlowVolumeShader.setMatrix44((const float*)&ProjectionView, "ProjectionView");
-    FlowVolume.render();
+    renderFlowVolume();
+    renderBoids();
 }
 
 void runloop(){

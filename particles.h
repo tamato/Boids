@@ -1,6 +1,8 @@
 #ifndef PARTICLE_H_
 #define PARTICLE_H_
 
+#include "path.h"
+
 #include <vector>
 
 #include "glm/glm.hpp"
@@ -8,13 +10,14 @@
 struct Particles
 {
     int Count;
-    float Alingment;
-    float Cohesion;
-    float Seperation;
+    float Alingment;    // steer towards the average heading of local flockmates
+    float Cohesion;     // steer to move toward the average position (center of mass) of local flockmates
+    float Seperation;   // steer to avoid crowding local flockmates
 
     typedef glm::vec3 position_type;
     std::vector<glm::vec3> Velocities;
     std::vector<glm::vec3> Positions;
+    std::vector<glm::vec3> SortedPositions;
     std::vector<float> Radii;
 
     // collision radii
@@ -24,6 +27,8 @@ struct Particles
     // values with curr/max
     // life
     // 
+
+    Path Constraint;
 
     Particles();
     void init(int count);

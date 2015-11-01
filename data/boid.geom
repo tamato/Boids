@@ -30,8 +30,10 @@ void makeVert(in vec2 xy){
 void main() {
 
     /**
-        1   3    
-        2   4
+        Generate the quad:
+        1 *---* 3    
+          | / |
+        2 *---* 4
     **/
     makeVert(vec2(-1, 1));
     makeVert(vec2(-1,-1));

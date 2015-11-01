@@ -6,5 +6,5 @@ layout(location = 0) out vec4 FragColor;
 void main() {
     float len = 1 - length(Corner);
     len = max(len, 0);
-    FragColor = vec4(vec3(len), 1);
+    FragColor = vec4(len);
 }

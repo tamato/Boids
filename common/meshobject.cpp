@@ -91,7 +91,7 @@ void MeshObject::render()
         glDrawArrays(GL_TRIANGLES, 0, VertCnt);
     }
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 }
 
 void MeshObject::setMesh(const MeshBuffer& meshBuffer)
