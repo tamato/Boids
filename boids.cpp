@@ -13,6 +13,7 @@
 #include "common/objloader.h"
 #include "common/meshbuffer.h"
 #include "common/meshobject.h"
+#include "common/torusgenerator.h"
 
 #include "particles.h"
 #include "particlesDrawable.h"
@@ -38,6 +39,9 @@ glm::vec3 ViewTarget;
 
 MeshObject FlowVolume;
 ProgramObject FlowVolumeShader;
+
+MeshObject DebugTorus;
+ProgramObject TorusShader;
 
 bool MousePositionCapture = false;
 glm::vec2 PrevMousePos;
@@ -112,7 +116,7 @@ void mouseCallback(GLFWwindow* window, int btn, int action, int mods)
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
     float dist = glm::length(ViewTarget - glm::vec3(Camera[3]));
-    dist -= 100.f * float(yoffset);
+    dist -= 50.f * float(yoffset);
     glm::vec3 position = dist * -glm::vec3(Camera[2]);
     Camera[3][0] = -glm::dot( glm::vec3(Camera[0]), position);
     Camera[3][1] = -glm::dot( glm::vec3(Camera[1]), position);
@@ -180,9 +184,8 @@ void initBoids(){
     shaders[GL_FRAGMENT_SHADER] = DataDirectory + "boid.frag";
     BoidsShader.init(shaders);
 
-    BoidsDrawable.init();
-    
-    Boids.init(10);
+    Boids.init(20);
+    BoidsDrawable.init(Boids);
 }
 
 void initMesh(){
@@ -203,12 +206,31 @@ void initMesh(){
     FlowVolumeShader.init(shaders);
 }
 
+void initTorus(){
+
+    ogle::TorusGenerator torus;
+    torus.centerlinePath(Boids.Constraint);
+    torus.generate();
+
+    MeshBuffer buffer;
+    buffer.setVerts(torus.Positions.size(), (const float*)torus.Positions.data());
+    buffer.setNorms(torus.Normals.size(), (const float*)torus.Normals.data());
+    buffer.setIndices(torus.Indices.size(), torus.Indices.data());
+    DebugTorus.init(buffer);
+
+    std::map<unsigned int, std::string> shaders;
+    shaders[GL_VERTEX_SHADER] = DataDirectory + "diffuse.vert";
+    shaders[GL_FRAGMENT_SHADER] = DataDirectory + "diffuse.frag";
+    TorusShader.init(shaders);
+}
+
 void initView(){
     float fovy = glm::radians(30.f);
-    Projection = glm::perspective<float>(fovy, WINDOW_WIDTH/WINDOW_HEIGHT, 0.1f, 10000.0f );
+    Projection = glm::perspective<float>(fovy, WINDOW_WIDTH/WINDOW_HEIGHT, 0.1f, 1000.0f );
 
     glm::vec3 diagonal = FlowVolume.PivotPoint - FlowVolume.AABBMin;
-    float opposite = glm::length(diagonal);
+    // float opposite = glm::length(diagonal);
+    float opposite = 101.f;
     float adjacent = atan(fovy*.5f) / opposite;
     adjacent = 1.f / adjacent;
 
@@ -225,6 +247,8 @@ void init(int argc, char* argv[]){
     ogle::Debug::init();
     initBoids();
     initMesh();
+
+    initTorus();
 
     initView();
 }
@@ -247,12 +271,13 @@ void renderBoids(){
     glBlendEquation(GL_FUNC_ADD);
 
     BoidsShader.bind();
-    BoidsShader.setFloat(100.1f, "Radius");
+    BoidsShader.setFloat(10.1f, "Radius");
     BoidsShader.setMatrix44((const float*)&ProjectionView, "ProjectionView");
-    BoidsDrawable.render();
+    BoidsDrawable.render(Boids);
 }
 
 void renderFlowVolume(){
+    return;
     glDisable(GL_BLEND);
 
     glEnable(GL_DEPTH_TEST);
@@ -263,6 +288,20 @@ void renderFlowVolume(){
     FlowVolume.render();
 }
 
+void renderTorus(){
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
+    // glEnable(GL_CULL_FACE);
+
+    TorusShader.bind();
+    TorusShader.setMatrix44((const float*)&ProjectionView, "ProjectionView");
+    DebugTorus.render();
+    glDisable(GL_CULL_FACE);
+
+}
+
 void render(){
     glClearColor( 0,0,0,0 );
     glClearDepth( 1 );
@@ -270,6 +309,7 @@ void render(){
 
     renderFlowVolume();
     renderBoids();
+    renderTorus();
 }
 
 void runloop(){

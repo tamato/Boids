@@ -7,7 +7,7 @@ namespace {
     #define bufferOffest(x) ((char*)NULL+(x))
 }
 
-void ParticlesDrawable::init()
+void ParticlesDrawable::init(const Particles& particles)
 {
     glGenVertexArrays(1, &vao);
     glGenBuffers(1, &vbo);
@@ -15,8 +15,8 @@ void ParticlesDrawable::init()
     glBindVertexArray(vao);
     glEnableVertexAttribArray(0);
     
-    buffer_size = 0;
-    point_count = 0;
+    buffer_size = particles.Count * sizeof(Particles::position_type);
+    point_count = particles.Count;
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, bufferOffest(0));
@@ -28,20 +28,20 @@ void ParticlesDrawable::init()
 
 void ParticlesDrawable::update(const Particles& particles)
 {
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, buffer_size, (GLvoid*)0, GL_DYNAMIC_DRAW);
-    buffer_size = particles.Count * sizeof(Particles::position_type);
-    point_count = particles.Count;
-
-    glBufferData(GL_ARRAY_BUFFER, buffer_size, (GLvoid*)particles.Positions.data(), GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void ParticlesDrawable::render()
 {
     glBindVertexArray(vao);
     glDrawArrays(GL_POINTS, 0, point_count);
-    glBindVertexArray(0);
+}
+
+void ParticlesDrawable::render(const Particles& particles)
+{
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, buffer_size, (GLvoid*)particles.Positions.data());    
+    glDrawArrays(GL_POINTS, 0, point_count);
 }
 
 void ParticlesDrawable::shutdown()

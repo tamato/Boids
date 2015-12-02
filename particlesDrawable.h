@@ -10,8 +10,9 @@ struct ParticlesDrawable
     unsigned int buffer_size;
     unsigned int point_count;
 
-    void init();
+    void init(const Particles& particles);
     void update(const Particles& particles);
+    void render(const Particles& particles);
     void render();
     void shutdown();
 };
