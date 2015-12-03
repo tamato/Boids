@@ -24,18 +24,15 @@ void TorusGenerator::generate()
         base_pts[i] = glm::rotateY(glm::vec3(1.f, 0.f, 0.f), i/float(Slices) * glm::two_pi<float>());
     }
 
-    std::vector<glm::vec3> curve_normals(TorusCenterline.Count);
-    std::vector<glm::vec3> rotation_axii(TorusCenterline.Count);
+    std::vector<glm::vec3> averaged_tangent(TorusCenterline.Count);
     for (uint32_t i=0; i<TorusCenterline.Count; ++i){
         glm::vec3 prev_pt = TorusCenterline.Points[ (i-1 + TorusCenterline.Count) % TorusCenterline.Count ];
-        glm::vec3 curr_pt = TorusCenterline.Points[ i ];
         glm::vec3 next_pt = TorusCenterline.Points[ (i+1) % TorusCenterline.Count ];
 
         glm::vec3 line = next_pt - prev_pt;
         glm::vec3 normalized_line = glm::normalize(line);
-        rotation_axii[i] = normalized_line;
+        averaged_tangent[i] = normalized_line;
     }
-
     const uint32_t pt_count = TorusCenterline.Count * Slices;
     Positions.resize(pt_count);
     Normals.resize(pt_count);
@@ -44,11 +41,11 @@ void TorusGenerator::generate()
     Indices.resize(pt_count * verts_per_quad);
     
     for (uint32_t stack=0; stack<TorusCenterline.Count; ++stack){
-        float angle = glm::dot(rotation_axii[stack], glm::vec3(0,1,0));
+        float angle = glm::dot(averaged_tangent[stack], glm::vec3(0,1,0));
         angle = acos(angle);
         glm::vec3 axis(0,0,1);
         if (stack != 0 && stack != (TorusCenterline.Count/2)) {
-            axis = glm::cross(glm::vec3(0,1,0), rotation_axii[stack]);
+            axis = glm::cross(glm::vec3(0,1,0), averaged_tangent[stack]);
         }
 
         glm::mat4x4 transform;

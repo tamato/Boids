@@ -14,6 +14,7 @@
 #include "common/meshbuffer.h"
 #include "common/meshobject.h"
 #include "common/torusgenerator.h"
+#include "common/curvegenerator.h"
 
 #include "particles.h"
 #include "particlesDrawable.h"
@@ -42,6 +43,9 @@ ProgramObject FlowVolumeShader;
 
 MeshObject DebugTorus;
 ProgramObject TorusShader;
+
+MeshObject DebugLines;
+ProgramObject LinesShader;
 
 bool MousePositionCapture = false;
 glm::vec2 PrevMousePos;
@@ -206,6 +210,24 @@ void initMesh(){
     FlowVolumeShader.init(shaders);
 }
 
+void initLines(){
+
+    ogle::CurveGenerator lines;
+    lines.addLineSegments(Boids.Constraint);
+    lines.generate();
+
+    MeshBuffer buffer;
+    buffer.setVerts(lines.Positions.size(), (const float*)lines.Positions.data());
+    buffer.setIndices(lines.Indices.size(), lines.Indices.data());
+    buffer.generateFaceNormals();
+    DebugLines.init(buffer);
+
+    std::map<unsigned int, std::string> shaders;
+    shaders[GL_VERTEX_SHADER] = DataDirectory + "lines.vert";
+    shaders[GL_FRAGMENT_SHADER] = DataDirectory + "diffuse.frag";
+    LinesShader.init(shaders);
+}
+
 void initTorus(){
 
     ogle::TorusGenerator torus;
@@ -249,6 +271,7 @@ void init(int argc, char* argv[]){
     initMesh();
 
     initTorus();
+    initLines();
 
     initView();
 }
@@ -277,7 +300,6 @@ void renderBoids(){
 }
 
 void renderFlowVolume(){
-    return;
     glDisable(GL_BLEND);
 
     glEnable(GL_DEPTH_TEST);
@@ -298,8 +320,20 @@ void renderTorus(){
     TorusShader.bind();
     TorusShader.setMatrix44((const float*)&ProjectionView, "ProjectionView");
     DebugTorus.render();
-    glDisable(GL_CULL_FACE);
+    // glDisable(GL_CULL_FACE);
+}
 
+void renderLines(){
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
+    // glEnable(GL_CULL_FACE);
+
+    LinesShader.bind();
+    LinesShader.setMatrix44((const float*)&ProjectionView, "ProjectionView");
+    DebugLines.render();
+    // glDisable(GL_CULL_FACE);
 }
 
 void render(){
@@ -307,9 +341,10 @@ void render(){
     glClearDepth( 1 );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-    renderFlowVolume();
+    // renderFlowVolume();
+    // renderTorus();
+    renderLines();
     renderBoids();
-    renderTorus();
 }
 
 void runloop(){

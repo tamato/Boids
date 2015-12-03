@@ -1,6 +1,5 @@
 #pragma once
 #include <glm/glm.hpp>
-#include "meshbuffer.h"
 #include "path.h"
 
 namespace ogle
@@ -19,6 +18,6 @@ namespace ogle
     public:    
         std::vector<glm::vec3> Positions;
         std::vector<glm::vec3> Normals;
-        std::vector<unsigned int> Indices;
+        std::vector<uint32_t> Indices;
     };
 }
