@@ -2,4 +2,4 @@ build/
 external/
 lib/
 *~
-*.sublime-*
+*.sublime-workspace
