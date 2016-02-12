@@ -2,14 +2,16 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <iostream>
+#include "vertexattributeindices.h"
 
 MeshBuffer::MeshBuffer()
     : UsesNormals(false)
     , UsesUVs(false)
     , UsesIndices(false)
+    , UsesGenerics(5, false)
     , VertCnt(0)
     , IdxCnt(0)
-    , Indices(0)
+    , Generics(5)
 {
 
 }
@@ -25,7 +27,6 @@ MeshBuffer::MeshBuffer(const MeshBuffer & ref)
     , UsesIndices(false)
     , VertCnt(0)
     , IdxCnt(0)
-    , Indices(0)
 {
     this->operator =(ref);
 }
@@ -38,7 +39,12 @@ MeshBuffer& MeshBuffer::operator=(const MeshBuffer & ref)
     setVerts(ref.VertCnt, (float*)&ref.Verts[0]);
     setNorms(ref.VertCnt, (float*)&ref.Norms[0]);
     setTexCoords(0, ref.VertCnt, (float*)&ref.TexCoords[0]);
-    setIndices(ref.IdxCnt, ref.Indices);
+
+    for (size_t i=0; i<5; ++i)
+        if (ref.UsesGenerics[i])
+            setGenerics(i, ref.getGenerics(i));
+
+    setIndices(ref.IdxCnt, (uint32_t*)&ref.Indices[0]);
     return *this;
 }
 
@@ -77,7 +83,7 @@ void MeshBuffer::setNorms(unsigned int count, const float* normals)
     UsesNormals = true;
 
     Norms.clear();
-    Norms.reserve(count);
+    Norms.resize(count);
     int src_num_componets = 3;
 
     for (unsigned int i=0; i<VertCnt; ++i)
@@ -87,7 +93,7 @@ void MeshBuffer::setNorms(unsigned int count, const float* normals)
         vec[1] = normals[i * src_num_componets + 1];
         vec[2] = normals[i * src_num_componets + 2];
 
-        Norms.push_back(vec);
+        Norms[i] = vec;
     }
 }
 
@@ -103,7 +109,7 @@ void MeshBuffer::setTexCoords(unsigned int layer, unsigned int count, const floa
     UsesUVs = true;
 
     TexCoords.clear();
-    TexCoords.reserve(count);
+    TexCoords.resize(count);
     int src_num_componets = 2;
 
     for (unsigned int i=0; i<VertCnt; ++i)
@@ -112,8 +118,28 @@ void MeshBuffer::setTexCoords(unsigned int layer, unsigned int count, const floa
         vec[0] = coords[i * src_num_componets + 0];
         vec[1] = coords[i * src_num_componets + 1];
 
-        TexCoords.push_back(vec);
+        TexCoords[i] = vec;
     }
+}
+
+void MeshBuffer::setGenerics(unsigned int index, const std::vector<glm::vec4>& values)
+{
+    if (values.size() != VertCnt)
+    {
+        std::cout << "Vert count does not match the number generic values to add to vbo" << std::endl;
+        exit(1);
+    }
+
+    if (index < 0 || index >= (unsigned int)UsesGenerics.size())
+    {
+        std::cout << "setGenerics index is not within the valid range of [0-4]" << std::endl;
+        exit(1);
+    }
+    UsesGenerics[index] = true;
+
+    Generics[index].clear();
+    Generics[index].resize(values.size());
+    Generics[index] = values;
 }
 
 void MeshBuffer::setIndices(unsigned int count, const unsigned int * indices)
@@ -122,38 +148,42 @@ void MeshBuffer::setIndices(unsigned int count, const unsigned int * indices)
     UsesIndices = true;
 
     IdxCnt = count;
-    delete [] Indices;
-    Indices = new unsigned int[IdxCnt];
-
+    Indices.clear();
+    Indices.resize(IdxCnt);
     for (unsigned int i=0; i<IdxCnt; ++i)
     {
         Indices[i] = indices[i];
     }
 }
 
-const std::vector<glm::vec3>& MeshBuffer::getVerts()
+const std::vector<glm::vec3>& MeshBuffer::getVerts() const
 {
     return Verts;
 }
 
-const std::vector<glm::vec3>& MeshBuffer::getNorms()
+const std::vector<glm::vec3>& MeshBuffer::getNorms() const
 {
     return Norms;
 }
 
-const std::vector<glm::vec2>& MeshBuffer::getTexCoords(unsigned int layer)
+const std::vector<glm::vec2>& MeshBuffer::getTexCoords(unsigned int layer) const
 {
     return TexCoords;
 }
 
-const unsigned int * MeshBuffer::getIndices() const
+const std::vector<glm::vec4>& MeshBuffer::getGenerics(unsigned int index) const
+{
+    return Generics[index];
+}
+
+const std::vector<uint32_t>& MeshBuffer::getIndices() const
 {
     return Indices;
 }
 
 void MeshBuffer::generateFaceNormals()
 {
-    assert(Indices);
+    assert(IdxCnt);
 
     UsesNormals = true;
     Norms.clear();
@@ -202,8 +232,10 @@ void MeshBuffer::cleanUp()
     Verts.clear();
     Norms.clear();
     TexCoords.clear();
+    for (auto& gen: Generics)
+        gen.clear();
+    Generics.clear();
 
-    delete [] Indices;
-    Indices = 0;
+    Indices.clear();
 }
 

@@ -25,27 +25,31 @@ void CurveGenerator::generate()
     const std::vector<float>& radiusList = LineSegments[0].Radii;
 
     const uint32_t ptls_size = point_list.size();
-    const uint32_t pts_per_line_pt = 2;
-    const uint32_t pt_count = ptls_size * pts_per_line_pt;
+    const uint32_t pts_per_line = 2;
+    const uint32_t pt_count = ptls_size * pts_per_line;
     const uint32_t verts_per_quad = 6;
     const std::vector<uint32_t> base_indicies = { 0, 1, 3, 0, 3, 2 };
 
     Indices.resize((ptls_size-1) * verts_per_quad);
     Positions.resize(pt_count);
+    PrevPoint.resize(pt_count);
+    NextPoint.resize(pt_count);
     for (uint32_t idx =0; idx<ptls_size; ++idx){
 
         // generate our normal for placing vert positions
         uint32_t line_idx = idx;
         if (idx == 0) line_idx = 1;
         if (idx == ptls_size-1) line_idx = ptls_size-2;
-        glm::vec3 line = point_list[line_idx+1] - point_list[line_idx-1];
-        glm::vec3 normals = glm::vec3(-line[1], line[0], line[2]); // cheap-o 90deg rotation in 2D
-        normals = glm::normalize(normals);
 
         // fill out vert positions
-        uint32_t pt_idx = idx * pts_per_line_pt;
-        Positions[pt_idx+0] = point_list[idx] + normals * radiusList[idx];
-        Positions[pt_idx+1] = point_list[idx] - normals * radiusList[idx];
+        uint32_t pt_idx = idx * pts_per_line;
+        Positions[pt_idx+0] = point_list[idx];
+        PrevPoint[pt_idx+0] = glm::vec4(point_list[line_idx-1], +radiusList[idx]);
+        NextPoint[pt_idx+0] = glm::vec4(point_list[line_idx+1], +radiusList[idx]);
+
+        Positions[pt_idx+1] = point_list[idx];
+        PrevPoint[pt_idx+1] = glm::vec4(point_list[line_idx-1], -radiusList[idx]);
+        NextPoint[pt_idx+1] = glm::vec4(point_list[line_idx+1], -radiusList[idx]);
 
         // fill out indices that will make our quads that make up the line
         uint32_t vert_idx = idx * verts_per_quad;

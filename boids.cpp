@@ -15,6 +15,7 @@
 #include "common/meshobject.h"
 #include "common/torusgenerator.h"
 #include "common/curvegenerator.h"
+#include "common/renderable.h"
 
 #include "particles.h"
 #include "particlesDrawable.h"
@@ -44,7 +45,7 @@ ProgramObject FlowVolumeShader;
 MeshObject DebugTorus;
 ProgramObject TorusShader;
 
-MeshObject DebugLines;
+Renderable DebugLines;
 ProgramObject LinesShader;
 
 bool MousePositionCapture = false;
@@ -99,7 +100,7 @@ void cursorCallback(GLFWwindow* window, double x, double y)
 
 void mouseCallback(GLFWwindow* window, int btn, int action, int mods)
 {
-    if (mods == GLFW_MOD_CONTROL){
+    if (mods == GLFW_MOD_ALT){
         if (btn == GLFW_MOUSE_BUTTON_1) {
             if(action == GLFW_PRESS) {
                 double x,y;
@@ -218,8 +219,10 @@ void initLines(){
 
     MeshBuffer buffer;
     buffer.setVerts(lines.Positions.size(), (const float*)lines.Positions.data());
+    buffer.setGenerics(0, lines.PrevPoint);
+    buffer.setGenerics(1, lines.NextPoint);
+
     buffer.setIndices(lines.Indices.size(), lines.Indices.data());
-    buffer.generateFaceNormals();
     DebugLines.init(buffer);
 
     std::map<unsigned int, std::string> shaders;
@@ -325,15 +328,15 @@ void renderTorus(){
 
 void renderLines(){
     glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDisable(GL_DEPTH_TEST);
 
-    // glEnable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
 
     LinesShader.bind();
     LinesShader.setMatrix44((const float*)&ProjectionView, "ProjectionView");
+
     DebugLines.render();
-    // glDisable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
 }
 
 void render(){

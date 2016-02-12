@@ -21,7 +21,8 @@ void TorusGenerator::generate()
 {
     std::vector<glm::vec3> base_pts(Slices);
     for (uint32_t i=0; i<Slices; ++i){
-        base_pts[i] = glm::rotateY(glm::vec3(1.f, 0.f, 0.f), i/float(Slices) * glm::two_pi<float>());
+        float ang = i/float(Slices) * glm::two_pi<float>();
+        base_pts[i] = glm::vec3( cos(ang), 0.f, sin(ang) );
     }
 
     std::vector<glm::vec3> averaged_tangent(TorusCenterline.Count);

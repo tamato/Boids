@@ -22,10 +22,13 @@ public:
     void setTexCoords(unsigned int layer, unsigned int count, const float* coords);
     void setIndices(unsigned int count, const unsigned int * indices);
 
-    const std::vector<glm::vec3>& getVerts();
-    const std::vector<glm::vec3>& getNorms();
-    const std::vector<glm::vec2>& getTexCoords(unsigned int layer);
-    const unsigned int * getIndices() const;
+    const std::vector<glm::vec3>& getVerts() const;
+    const std::vector<glm::vec3>& getNorms() const;
+    const std::vector<glm::vec2>& getTexCoords(unsigned int layer) const;
+    const std::vector<uint32_t>& getIndices() const;
+
+    void setGenerics(unsigned int index, const std::vector<glm::vec4>& values);
+    const std::vector<glm::vec4>& getGenerics(unsigned int index) const;
 
     unsigned int getVertCnt() const;
     unsigned int getIdxCnt() const;
@@ -35,6 +38,7 @@ public:
     bool UsesNormals;
     bool UsesUVs;
     bool UsesIndices;
+    std::vector<bool> UsesGenerics;
 
 private:
 
@@ -46,7 +50,12 @@ private:
     std::vector<glm::vec3> Verts;
     std::vector<glm::vec3> Norms;
     std::vector<glm::vec2> TexCoords;
-    unsigned int * Indices;
+    std::vector<glm::vec4> Generic0;
+
+
+    std::vector<std::vector<glm::vec4>> Generics;
+
+    std::vector<uint32_t>  Indices;
 };
 
 #endif // MESH_BUFFER_H_

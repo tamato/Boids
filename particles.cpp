@@ -10,8 +10,8 @@
 
 Particles::Particles()
  : Count(0)
- , Alingment(1000)
- , Cohesion(100)
+ , Alingment(10)
+ , Cohesion(50)
  , Seperation(5)
  , MaxSpeed(100)
 {
@@ -44,7 +44,7 @@ void Particles::init(int count)
         float x = std::cos(val) * cylinder_center;
         float y = std::sin(val) * cylinder_center;
 
-        Constraint.Radii[i] = 5.f * std::max(1.0f-percent, 0.1f);
+        Constraint.Radii[i] = 15.f * std::max(1.0f-percent, 0.4f);
         Constraint.Points[i] = glm::vec3(x,y,0);
     }
 
@@ -75,7 +75,9 @@ void Particles::update(float dt)
 
         glm::vec3 steering_force(0);
         
-        glm::vec3 flow = flow_direction * flow_influence;
+        float radii_speed = pt0 / float(Constraint.Count);
+        radii_speed = std::max(flow_influence * radii_speed, 10000.f * dt);
+        glm::vec3 flow = flow_direction * radii_speed;
         glm::vec3 alingment = alingmentSteering(i);
         glm::vec3 seperation = seperationSteering(i);
         glm::vec3 cohesion = cohesionSteering(i);
@@ -98,7 +100,7 @@ void Particles::update(float dt)
         glm::vec3 projected_pos = Constraint.Points[pt0] + flow_direction * projected_length;
         glm::vec3 limit = projected_pos - desired_pos;
         float limit_len = glm::length(limit);
-        float distance_check = limit_len - Constraint.Radii[i];
+        float distance_check = limit_len - Constraint.Radii[pt0];
         // std::cout << "Distance: " << distance_check << std::endl;
         if (distance_check > 0){
             limit /= limit_len;

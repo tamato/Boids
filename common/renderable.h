@@ -1,14 +1,15 @@
-#ifndef MESH_OBJECT_H_
-#define MESH_OBJECT_H_
+#pragma once
 
+#include <vector>
 #include "glm/glm.hpp"
 #include "meshbuffer.h"
 
-class MeshObject
+namespace ogle {
+class Renderable
 {
 public:
-    MeshObject();
-    virtual ~MeshObject();
+    Renderable();
+    virtual ~Renderable();
 
     void init(const MeshBuffer& meshObj);
 
@@ -17,14 +18,6 @@ public:
 
     void setMesh(const MeshBuffer& meshBuffer);
 
-    void computeBoundingBox();
-
-    const MeshBuffer& getMesh();
-
-    glm::vec3 PivotPoint;
-    glm::vec3 AABBMin;
-    glm::vec3 AABBMax;
-
     unsigned int IndexRangeStart;
     unsigned int IndexRangeEnd;
     unsigned int IndiceCnt;
@@ -32,25 +25,20 @@ public:
 private:
     bool Dirty;                     // If dirty re calculate the mesh buffer to be drawn
     unsigned int VertCnt;
-    unsigned int EnabledArrays;
+    std::vector<unsigned int> EnabledArrays;
 
     unsigned int VAO;
     unsigned int VBO;
     unsigned int IBO;
 
-    MeshBuffer Mesh;
+    const unsigned int Normalidx;
+    const unsigned int Color0idx;
+    const unsigned int UVidx;
 
-    unsigned int Normalidx;
-    unsigned int UVidx;
-    unsigned int Color0idx;
-    unsigned int Color1idx;
-    
     unsigned int Stride;
-    
     unsigned int NormOffset;
     unsigned int UvOffset;
-    unsigned int Color0Offset;
-    unsigned int Color1Offset;
+    std::vector<unsigned int> GenericsOffsets;
 };
+}
 
-#endif // MESH_OBJECT_H_

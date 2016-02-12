@@ -4,22 +4,25 @@
 #define GLEW_NO_GLU
 #include <GL/glew.h>
 
-#include "meshobject.h"
+#include "renderable.h"
+
+#include "vertexattributeindices.h"
+
+using namespace ogle;
 
 #define bufferOffest(x) ((char*)NULL+(x))
 
-MeshObject::MeshObject()
+Renderable::Renderable()
     : IndiceCnt(0)
     , VertCnt(0)
-    , EnabledArrays(0)
     , VAO(0)
     , VBO(0)
     , IBO(0)
-    , PivotPoint(0,0,0)
-    , AABBMin( 9e23f)
-    , AABBMax(-9e23f)
     , IndexRangeStart(0)
     , IndexRangeEnd(0)
+    , Normalidx(2)
+    , Color0idx(3)
+    , UVidx(8)
 {
     /************************************************************************************
       According to:
@@ -54,10 +57,10 @@ MeshObject::MeshObject()
     /**************************************************************************************/
 }
 
-MeshObject::~MeshObject()
+Renderable::~Renderable()
 {
-    for (GLuint i=0; i<EnabledArrays; ++i)
-        glDisableVertexAttribArray(i);
+    for (const auto& earray : EnabledArrays)
+        glDisableVertexAttribArray(earray);
 
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &IBO);
@@ -65,18 +68,18 @@ MeshObject::~MeshObject()
     glDeleteVertexArrays(1, &VAO);
 }
 
-void MeshObject::init(const MeshBuffer& meshObj)
+void Renderable::init(const MeshBuffer& meshObj)
 {
     // setup the mesh 
     setMesh(meshObj);
 }
 
-void MeshObject::update()
+void Renderable::update()
 {
 
 }
 
-void MeshObject::render()
+void Renderable::render()
 {
     glBindVertexArray(VAO);
 
@@ -94,62 +97,87 @@ void MeshObject::render()
     glBindVertexArray(0);
 }
 
-void MeshObject::setMesh(const MeshBuffer& meshBuffer)
+void Renderable::setMesh(const MeshBuffer& meshBuffer)
 {
-    Mesh = meshBuffer;
     VertCnt = meshBuffer.getVertCnt();
-    computeBoundingBox();
 
     unsigned int vertArrayCnt = VertCnt;
     int VertComponentCount = sizeof(glm::vec3) / sizeof(glm::vec3::value_type);
     int NormalComponentCount = sizeof(glm::vec3) / sizeof(glm::vec3::value_type);
     int UVComponentCount = sizeof(glm::vec2) / sizeof(glm::vec2::value_type);
+    int GenericComponentCount = sizeof(glm::vec4) / sizeof(glm::vec4::value_type);
     Stride = VertComponentCount; // will always have positions
+
     NormOffset = 0;
     UvOffset = 0;
-    Normalidx = 0;
-    UVidx = 0;
-    EnabledArrays = 1; // 1 is for positions
+    GenericsOffsets.clear();
+    std::vector<std::vector<glm::vec4>> generics;
+
+    EnabledArrays.clear();
+    EnabledArrays.push_back(0); // 0 is for positions
     if (meshBuffer.UsesNormals)
     {
-        Normalidx = EnabledArrays++;
+        EnabledArrays.push_back(Normalidx);
         vertArrayCnt += VertCnt;
         NormOffset = Stride;
         Stride += NormalComponentCount;
     }
     if (meshBuffer.UsesUVs)
     {
-        UVidx = EnabledArrays++;
+        EnabledArrays.push_back(UVidx);
         vertArrayCnt += VertCnt;
         UvOffset = Stride;
         Stride += UVComponentCount;
     }
 
-    const float* pos = (float*)&Mesh.getVerts()[0];
-    const float* norm = (float*)&Mesh.getNorms()[0];
-    const float* uv = (float*)&Mesh.getTexCoords(0)[0];
+    for (unsigned int i = 0; i < meshBuffer.UsesGenerics.size(); i++)
+    {
+        if (meshBuffer.UsesGenerics[i])
+        {
+            EnabledArrays.push_back(VertexAttributeIndices::Generics[i]);
+            vertArrayCnt += VertCnt;
+            GenericsOffsets.push_back(Stride);
+            Stride += GenericComponentCount;
+
+            generics.push_back(meshBuffer.getGenerics(i));
+        }
+    }
+
+    const std::vector<glm::vec3>& pos = meshBuffer.getVerts();
+    const std::vector<glm::vec3>& norm = meshBuffer.getNorms();
+    const std::vector<glm::vec2>& uv = meshBuffer.getTexCoords(0);
+
     float* vertArray = new float[VertCnt*Stride];
 
-    for (int i=0, idx=0, uvidx=0; i<VertCnt; i++, idx+=3, uvidx+=2)
+    for (int i=0; i<VertCnt; ++i)
     {
         int vi = i*Stride;
-        vertArray[vi+0] = pos[idx+0];
-        vertArray[vi+1] = pos[idx+1];
-        vertArray[vi+2] = pos[idx+2];
+        vertArray[vi+0] = pos[i][0];
+        vertArray[vi+1] = pos[i][1];
+        vertArray[vi+2] = pos[i][2];
 
         if (NormOffset)
         {
             int ni = i*Stride+NormOffset;
-            vertArray[ni+0] = norm[idx+0];
-            vertArray[ni+1] = norm[idx+1];
-            vertArray[ni+2] = norm[idx+2];
+            vertArray[ni+0] = norm[i][0];
+            vertArray[ni+1] = norm[i][1];
+            vertArray[ni+2] = norm[i][2];
         }
 
         if (UvOffset)
         {
             int ti = i*Stride+UvOffset;
-            vertArray[ti+0] = uv[idx+0];
-            vertArray[ti+1] = uv[idx+1];
+            vertArray[ti+0] = uv[i][0];
+            vertArray[ti+1] = uv[i][1];
+        }
+
+        for (int g=0; g<(int)generics.size(); ++g)
+        {
+            int gi = i*Stride+GenericsOffsets[g];
+            vertArray[gi+0] = generics[g][i][0];
+            vertArray[gi+1] = generics[g][i][1];
+            vertArray[gi+2] = generics[g][i][2];
+            vertArray[gi+3] = generics[g][i][3];
         }
     }
 
@@ -157,6 +185,8 @@ void MeshObject::setMesh(const MeshBuffer& meshBuffer)
     Stride *= 4;
     NormOffset *= 4;
     UvOffset *= 4;
+    for (int g=0; g<(int)GenericsOffsets.size(); ++g)
+        GenericsOffsets[g] *= 4;
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
@@ -164,8 +194,8 @@ void MeshObject::setMesh(const MeshBuffer& meshBuffer)
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &IBO);
 
-    for (GLuint i=0; i<EnabledArrays; ++i)
-        glEnableVertexAttribArray(i);
+    for (const auto& earray : EnabledArrays)
+        glEnableVertexAttribArray(earray);
 
     // set vert buffer    
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -177,11 +207,15 @@ void MeshObject::setMesh(const MeshBuffer& meshBuffer)
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, Stride, bufferOffest(0));
 
-    if (Normalidx)
+    if (NormOffset)
         glVertexAttribPointer(Normalidx, 3, GL_FLOAT, GL_FALSE, Stride, bufferOffest(NormOffset));
 
-    if (UVidx)
+    if (UvOffset)
         glVertexAttribPointer(UVidx, 2, GL_FLOAT, GL_FALSE, Stride, bufferOffest(UvOffset));
+    
+    for (int g=0; g<(int)GenericsOffsets.size(); ++g){
+        glVertexAttribPointer(VertexAttributeIndices::Generics[g], 4, GL_FLOAT, GL_FALSE, Stride, bufferOffest(GenericsOffsets[g]));
+    }
 
     delete [] vertArray;
 
@@ -191,7 +225,7 @@ void MeshObject::setMesh(const MeshBuffer& meshBuffer)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER,
             IndiceCnt * sizeof(GLuint),
-            (GLvoid*)Mesh.getIndices().data(),
+            (GLvoid*)meshBuffer.getIndices().data(),
             GL_STATIC_DRAW);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
@@ -201,28 +235,5 @@ void MeshObject::setMesh(const MeshBuffer& meshBuffer)
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-}
-
-void MeshObject::computeBoundingBox()
-{
-    const std::vector<glm::vec3>& verts = Mesh.getVerts();
-    for (int i=0; i<(int)verts.size(); ++i)
-    {
-        if (verts[i][0] < AABBMin[0]) AABBMin[0] = verts[i][0];
-        if (verts[i][1] < AABBMin[1]) AABBMin[1] = verts[i][1];
-        if (verts[i][2] < AABBMin[2]) AABBMin[2] = verts[i][2];
-
-        if (verts[i][0] > AABBMax[0]) AABBMax[0] = verts[i][0];
-        if (verts[i][1] > AABBMax[1]) AABBMax[1] = verts[i][1];
-        if (verts[i][2] > AABBMax[2]) AABBMax[2] = verts[i][2];
-    }
-
-    glm::vec3 diagonal = AABBMax - AABBMin;
-    PivotPoint = AABBMin + (diagonal * 0.5f);
-}
-
-const MeshBuffer& MeshObject::getMesh()
-{
-    return Mesh;
 }
 

@@ -18,6 +18,8 @@ namespace ogle
         std::vector<Path> LineSegments;
 
         std::vector<glm::vec3> Positions;
+        std::vector<glm::vec4> PrevPoint;
+        std::vector<glm::vec4> NextPoint;
         std::vector<uint32_t> Indices;
     };
 }
