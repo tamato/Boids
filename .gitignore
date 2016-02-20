@@ -3,3 +3,6 @@ external/
 lib/
 *~
 *.sublime-workspace
+CMakeLists.txt.user
+*.zip
+qtbuild/
