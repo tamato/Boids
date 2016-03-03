@@ -39,29 +39,28 @@ endif ()
 
 ###########################################
 # Add GLEW
-add_definitions(-DGLEW_STATIC)
-if (WIN32)
-    set(GLEW_LIBRARY glew32s)
-else(WIN32)
-    ################################
-    # Add GLFW, http://www.glfw.org/docs/latest/build.html
-    find_package(PkgConfig REQUIRED)
-    pkg_search_module(GLFW REQUIRED glfw3)
-    include_directories(${GLFW_INCLUDE_DIRS})
-    set(GLEW_LIBRARY GLEW)
-endif()
+#DGLEW_STATIC
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glew/build/lib)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glew/include)
+
+###########################################
+# Add GLFW, and have it built with the project
+set(GLFW_BUILD_EXAMPLES OFF CACHE STRING "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE STRING "" FORCE)
+set(GLFW_INSTALL OFF CACHE STRING "" FORCE)
+set(GLFW_BUILD_DOCS OFF CACHE STRING "" FORCE)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/glfw)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glfw/include)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/build/external/glfw/src)
+
+###########################################
+# Add GLM
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glm)
 
 ################################################################################
 # The core project files
 file (GLOB SRCS *.cpp )
-file (GLOB HDRS *.h )
 file (GLOB COMMON_SOURCE common/*.cpp)
 
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/external
-    )
-
-add_executable( ${PROJECT_NAME} ${SRCS} ${COMMON_SOURCE} ${HDRS} )
-
-target_link_libraries( ${PROJECT_NAME} ${GLFW_STATIC_LIBRARIES} ${GLEW_LIBRARY} )
+add_executable( ${PROJECT_NAME} ${SRCS} ${COMMON_SOURCE} )
+target_link_libraries( ${PROJECT_NAME} glfw GL GLEW )
