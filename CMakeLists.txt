@@ -39,19 +39,23 @@ endif ()
 
 ###########################################
 # Add GLEW
-#DGLEW_STATIC
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glew/build/lib)
+add_definitions(-DGLEW_STATIC)
+option(glew-cmake_BUILD_SHARED "" OFF)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/glew)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glew/src)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glew/include)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glew/build/lib)
 
 ###########################################
 # Add GLFW, and have it built with the project
+set(BUILD_SHARED_LIBS OFF CACHE STRING "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE STRING "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE STRING "" FORCE)
 set(GLFW_INSTALL OFF CACHE STRING "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE STRING "" FORCE)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/glfw)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glfw/include)
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/build/external/glfw/src)
+# link_directories(${CMAKE_CURRENT_SOURCE_DIR}/build/external/glfw/src)
 
 ###########################################
 # Add GLM
@@ -64,3 +68,4 @@ file (GLOB COMMON_SOURCE common/*.cpp)
 
 add_executable( ${PROJECT_NAME} ${SRCS} ${COMMON_SOURCE} )
 target_link_libraries( ${PROJECT_NAME} glfw GL GLEW )
+
