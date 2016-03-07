@@ -7,8 +7,7 @@
 #include <string.h>
 #include <vector>
 
-#define GLEW_NO_GLU
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 using namespace ogle;
 
@@ -40,6 +39,7 @@ void ProgramObject::init( const std::map<unsigned int, std::string>& shaders )
     }
 
     collectUniforms();
+    CleanedUp = false;
 }
 
 void ProgramObject::bindAttribLoc(GLuint index, const char * variable)
@@ -84,8 +84,13 @@ void ProgramObject::unbind()
 
 void ProgramObject::shutdown()
 {
+    if (CleanedUp)
+        return;
+    
     glUseProgram(0);
     glDeleteProgram(ProgramName);
+    ProgramName = 0;
+    CleanedUp = true;
 }
 
 void ProgramObject::linkProgram()

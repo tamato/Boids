@@ -27,7 +27,7 @@ MACRO_ENSURE_OUT_OF_SOURCE_BUILD(
 
 ################################################################################
 # Add in support for c++11
-list( APPEND CMAKE_CXX_FLAGS "-std=c++11 -static-libstdc++")
+list( APPEND CMAKE_CXX_FLAGS "-std=c++11")
 
 ################################################################################
 # Set up the type of build to use. i.e. Debug or Release?
@@ -38,13 +38,9 @@ if (CMAKE_BUILD_TYPE STREQUAL "")
 endif ()
 
 ###########################################
-# Add GLEW
-add_definitions(-DGLEW_STATIC)
-option(glew-cmake_BUILD_SHARED "" OFF)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/glew)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glew/src)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glew/include)
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glew/build/lib)
+# Add GLAD
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glad)
+set(GLAD_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/glad.c)
 
 ###########################################
 # Add GLFW, and have it built with the project
@@ -66,6 +62,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glm)
 file (GLOB SRCS *.cpp )
 file (GLOB COMMON_SOURCE common/*.cpp)
 
-add_executable( ${PROJECT_NAME} ${SRCS} ${COMMON_SOURCE} )
-target_link_libraries( ${PROJECT_NAME} glfw GL GLEW )
+add_executable( ${PROJECT_NAME} ${SRCS} ${COMMON_SOURCE} ${GLAD_SOURCE})
+target_link_libraries( ${PROJECT_NAME} glfw)
 

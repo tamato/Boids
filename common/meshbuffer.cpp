@@ -130,7 +130,7 @@ void MeshBuffer::setGenerics(unsigned int index, const std::vector<glm::vec4>& v
         exit(1);
     }
 
-    if (index < 0 || index >= (unsigned int)UsesGenerics.size())
+    if (index >= (unsigned int)UsesGenerics.size())
     {
         std::cout << "setGenerics index is not within the valid range of [0-4]" << std::endl;
         exit(1);

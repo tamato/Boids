@@ -1,8 +1,7 @@
 #include <iostream>
 #include <algorithm>
 #include <iomanip>
-#define GLEW_NO_GLU
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include "glm/glm.hpp"
@@ -154,10 +153,6 @@ void initGLFW(){
     glfwSwapInterval( 0 ); // Turn off vsync for benchmarking.
     cout << "[!] Warning, be sure that vsync is disabled in NVidia controller panel." << endl;
 
-    int width,height;
-    glfwGetFramebufferSize(glfwWindow, &width, &height);
-    glViewport( 0, 0, (GLsizei)width, (GLsizei)height );
-
     glfwSetTime( 0.0 );
     glfwSetKeyCallback(glfwWindow, keyCallback);
     glfwSetErrorCallback(errorCallback);
@@ -165,16 +160,16 @@ void initGLFW(){
     glfwSetScrollCallback(glfwWindow, scrollCallback);
 }
 
-void initGLEW(){
-    glewExperimental=GL_TRUE;
-    GLenum err = glewInit();
-    if (err != GLEW_OK) {
-        /// if it fails here, its becuase there is no current opengl version,
-        /// don't call glewInit() until after a context has been made current.
-        fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
-        exit( EXIT_FAILURE );
+void initGLAD(){
+    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
+    {
+        std::cout << "initGLAD: Failed to initialize OpenGL context" << std::endl;
+        exit(EXIT_FAILURE);
     }
-    glGetError(); // GLEW has problems, clear the one that it creates.
+
+    int width,height;
+    glfwGetFramebufferSize(glfwWindow, &width, &height);
+    glViewport( 0, 0, (GLsizei)width, (GLsizei)height );    
 }
 
 void setDataDir(int argc, char *argv[]){
@@ -268,7 +263,7 @@ void initView(){
 void init(int argc, char* argv[]){
     setDataDir(argc, argv);
     initGLFW();
-    initGLEW();
+    initGLAD();
     ogle::Debug::init();
     initBoids();
     initMesh();
@@ -365,6 +360,14 @@ void shutdown(){
     Boids.shutdown();
     BoidsDrawable.shutdown();
     BoidsShader.shutdown();
+
+    FlowVolumeShader.shutdown();
+    TorusShader.shutdown();
+    LinesShader.shutdown();
+
+    FlowVolume.shutdown();
+    DebugTorus.shutdown();
+    DebugLines.shutdown();
 
     ogle::Debug::shutdown();
     glfwDestroyWindow(glfwWindow);

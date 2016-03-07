@@ -1,8 +1,7 @@
 #include <stdlib.h>
 #include <iostream>
 
-#define GLEW_NO_GLU
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 #include "renderable.h"
 
@@ -23,6 +22,7 @@ Renderable::Renderable()
     , Normalidx(2)
     , Color0idx(3)
     , UVidx(8)
+    , CleanedUp(false)
 {
     /************************************************************************************
       According to:
@@ -54,24 +54,19 @@ Renderable::Renderable()
 
         Table X.2:  Aliasing of vertex attributes with conventional per-vertex
         parameters.
-    /**************************************************************************************/
+    **************************************************************************************/
 }
 
 Renderable::~Renderable()
 {
-    for (const auto& earray : EnabledArrays)
-        glDisableVertexAttribArray(earray);
-
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &IBO);
-    glDeleteBuffers(1, &IBO);
-    glDeleteVertexArrays(1, &VAO);
+    shutdown();
 }
 
 void Renderable::init(const MeshBuffer& meshObj)
 {
     // setup the mesh 
     setMesh(meshObj);
+    CleanedUp = false;
 }
 
 void Renderable::update()
@@ -95,6 +90,21 @@ void Renderable::render()
     }
 
     glBindVertexArray(0);
+}
+
+void Renderable::shutdown()
+{
+    if (CleanedUp)
+        return;
+
+    for (const auto& earray : EnabledArrays)
+        glDisableVertexAttribArray(earray);
+
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &IBO);
+    glDeleteBuffers(1, &IBO);
+    glDeleteVertexArrays(1, &VAO);
+    CleanedUp = true;
 }
 
 void Renderable::setMesh(const MeshBuffer& meshBuffer)

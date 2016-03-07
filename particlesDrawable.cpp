@@ -1,7 +1,6 @@
 #include "particlesDrawable.h"
 
-#define GLEW_NO_GLU
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 namespace {
     #define bufferOffest(x) ((char*)NULL+(x))

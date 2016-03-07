@@ -1,8 +1,7 @@
 #include <stdlib.h>
 #include <iostream>
 
-#define GLEW_NO_GLU
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 #include "meshobject.h"
 
@@ -20,6 +19,7 @@ MeshObject::MeshObject()
     , AABBMax(-9e23f)
     , IndexRangeStart(0)
     , IndexRangeEnd(0)
+    , CleanedUp(false)
 {
     /************************************************************************************
       According to:
@@ -51,24 +51,19 @@ MeshObject::MeshObject()
 
         Table X.2:  Aliasing of vertex attributes with conventional per-vertex
         parameters.
-    /**************************************************************************************/
+    **************************************************************************************/
 }
 
 MeshObject::~MeshObject()
 {
-    for (GLuint i=0; i<EnabledArrays; ++i)
-        glDisableVertexAttribArray(i);
-
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &IBO);
-    glDeleteBuffers(1, &IBO);
-    glDeleteVertexArrays(1, &VAO);
+    shutdown();
 }
 
 void MeshObject::init(const MeshBuffer& meshObj)
 {
     // setup the mesh 
     setMesh(meshObj);
+    CleanedUp = false;
 }
 
 void MeshObject::update()
@@ -92,6 +87,21 @@ void MeshObject::render()
     }
 
     glBindVertexArray(0);
+}
+
+void MeshObject::shutdown()
+{
+    if (CleanedUp)
+        return;
+
+    for (GLuint i=0; i<EnabledArrays; ++i)
+        glDisableVertexAttribArray(i);
+
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &IBO);
+    glDeleteBuffers(1, &IBO);
+    glDeleteVertexArrays(1, &VAO);
+    CleanedUp = true;
 }
 
 void MeshObject::setMesh(const MeshBuffer& meshBuffer)

@@ -30,7 +30,7 @@ namespace ogle {
 
         Table X.2:  Aliasing of vertex attributes with conventional per-vertex
         parameters.
-    /**************************************************************************************/
+    **************************************************************************************/
     namespace VertexAttributeIndices {
         const int PositionIdx = 0;
         const int NormalIdx = 2;

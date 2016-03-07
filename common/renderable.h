@@ -15,6 +15,7 @@ public:
 
     void update();
     void render();
+    void shutdown();
 
     void setMesh(const MeshBuffer& meshBuffer);
 
@@ -39,6 +40,7 @@ private:
     unsigned int NormOffset;
     unsigned int UvOffset;
     std::vector<unsigned int> GenericsOffsets;
+    bool CleanedUp;
 };
 }
 

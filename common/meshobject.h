@@ -14,6 +14,7 @@ public:
 
     void update();
     void render();
+    void shutdown();
 
     void setMesh(const MeshBuffer& meshBuffer);
 
@@ -51,6 +52,8 @@ private:
     unsigned int UvOffset;
     unsigned int Color0Offset;
     unsigned int Color1Offset;
+
+    bool CleanedUp;
 };
 
 #endif // MESH_OBJECT_H_
