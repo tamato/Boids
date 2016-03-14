@@ -174,7 +174,7 @@ void initGLAD(){
 
 void setDataDir(int argc, char *argv[]){
     // get base directory for reading in files
-    DataDirectory = "../data/";
+    DataDirectory = "./data/";
 }
 
 void initBoids(){
