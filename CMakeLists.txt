@@ -34,6 +34,8 @@ list( APPEND CMAKE_CXX_FLAGS "-std=c++11")
 if (CMAKE_BUILD_TYPE STREQUAL "")
   # CMake defaults to leaving CMAKE_BUILD_TYPE empty. This messes up
   # differentiation between debug and release builds.               
+  # use the following to the desired build type from the command line:
+  #   cmake -D CMAKE_BUILD_TYPE=Release
   set (CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif ()
 
@@ -65,3 +67,9 @@ file (GLOB COMMON_SOURCE common/*.cpp)
 add_executable( ${PROJECT_NAME} ${SRCS} ${COMMON_SOURCE} ${GLAD_SOURCE})
 target_link_libraries( ${PROJECT_NAME} glfw)
 
+add_custom_target(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>/data)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                       ${CMAKE_SOURCE_DIR}/data $<TARGET_FILE_DIR:${PROJECT_NAME}>/data)
