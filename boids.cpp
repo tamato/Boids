@@ -157,8 +157,8 @@ void initGLFW(){
         exit(EXIT_FAILURE);
     }
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
@@ -268,7 +268,7 @@ void initTorus(){
 
 void initView(){
     float fovy = glm::radians(30.f);
-    Projection = glm::perspective<float>(fovy, WINDOW_WIDTH/WINDOW_HEIGHT, 0.1f, 1000.0f );
+    Projection = glm::perspective<float>(fovy, WINDOW_WIDTH/(float)WINDOW_HEIGHT, 0.1f, 1000.0f );
 
     glm::vec3 diagonal = FlowVolume.PivotPoint - FlowVolume.AABBMin;
     // float opposite = glm::length(diagonal);
@@ -290,16 +290,16 @@ void init(int argc, char* argv[]){
     png_init(0,0);
 
     initBoids();
-    initMesh();
+//    initMesh();
 
-    initTorus();
+    //initTorus();
     initLines();
 
     initView();
 }
 
 void update(){
-    float deltaTime = glfwGetTime(); // get's the amount of time since last setTime
+    float deltaTime = (float)glfwGetTime(); // get's the amount of time since last setTime
     glfwSetTime(0);
 
     ProjectionView = Projection * Camera;
@@ -364,7 +364,7 @@ void render(){
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
     // renderFlowVolume();
-    // renderTorus();
+    renderTorus();
     renderLines();
     renderBoids();
 }

@@ -4,8 +4,10 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <string.h>
 #include <vector>
+#include <stdint.h>
 
 #include <glad/glad.h>
 

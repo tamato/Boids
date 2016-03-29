@@ -36,7 +36,7 @@ namespace ogle
         unsigned int ProgramName;
         std::map<std::string, int> Uniforms;
 
-        bool CleanedUp = false;
+        bool CleanedUp = true;
     };
 }
 

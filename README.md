@@ -1,4 +1,3 @@
-
 ### Clone this project with the --recursive flag
 
 ###Building
