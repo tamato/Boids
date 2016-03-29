@@ -13,11 +13,14 @@
 #include "common/meshbuffer.h"
 #include "common/meshobject.h"
 #include "common/torusgenerator.h"
+#include "common/cubegenerator.h"
 #include "common/curvegenerator.h"
 #include "common/renderable.h"
 
 #include "particles.h"
 #include "particlesDrawable.h"
+
+#include <pnglite.h>
 
 using namespace std;
 using namespace ogle;
@@ -63,6 +66,25 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (mods == GLFW_MOD_CONTROL && action == GLFW_RELEASE){
         MousePositionCapture = false;
         glfwSetCursorPosCallback(glfwWindow, nullptr);
+    }
+
+    if (key == GLFW_KEY_P && action == GLFW_RELEASE){
+        png_t out_img = {0};
+
+        int error = 0;
+        error = png_open_file_write(&out_img, "screen_shot.png");
+
+        int width = WINDOW_WIDTH;
+        int height = WINDOW_HEIGHT;
+        int comp_count = 4;
+        int bytes_per = 1;
+        unsigned char* data = new unsigned char[width * height * comp_count * bytes_per];
+        glReadPixels(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+        int bits_per_pixel = 8;
+        error = png_set_data(&out_img, width, height, bits_per_pixel, PNG_TRUECOLOR_ALPHA, data);
+        error = png_close_file(&out_img);
+        delete [] data; data = 0;
     }
 }
 
@@ -265,6 +287,8 @@ void init(int argc, char* argv[]){
     initGLFW();
     initGLAD();
     ogle::Debug::init();
+    png_init(0,0);
+
     initBoids();
     initMesh();
 

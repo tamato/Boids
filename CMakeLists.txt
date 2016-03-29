@@ -9,23 +9,6 @@ cmake_minimum_required (VERSION 2.8 FATAL_ERROR)
 project ("boids")
 
 ################################################################################
-# Ensures that we do an out of source build
-MACRO(MACRO_ENSURE_OUT_OF_SOURCE_BUILD MSG)
-     STRING(COMPARE EQUAL "${CMAKE_SOURCE_DIR}"
-     "${CMAKE_BINARY_DIR}" insource)
-     GET_FILENAME_COMPONENT(PARENTDIR ${CMAKE_SOURCE_DIR} PATH)
-     STRING(COMPARE EQUAL "${CMAKE_SOURCE_DIR}"
-     "${PARENTDIR}" insourcesubdir)
-    IF(insource OR insourcesubdir)
-        MESSAGE(FATAL_ERROR "${MSG}")
-    ENDIF(insource OR insourcesubdir)
-ENDMACRO(MACRO_ENSURE_OUT_OF_SOURCE_BUILD)
-
-MACRO_ENSURE_OUT_OF_SOURCE_BUILD(
-    "${CMAKE_PROJECT_NAME} requires an out of source build."
-)
-
-################################################################################
 # Add in support for c++11
 list( APPEND CMAKE_CXX_FLAGS "-std=c++11")
 
@@ -53,19 +36,31 @@ set(GLFW_INSTALL OFF CACHE STRING "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE STRING "" FORCE)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/glfw)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glfw/include)
-# link_directories(${CMAKE_CURRENT_SOURCE_DIR}/build/external/glfw/src)
 
 ###########################################
 # Add GLM
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glm)
+
+###########################################
+# Add pnglite
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/pnglite)
+set(PNGLITE_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/external/pnglite/pnglite.c)
+# CMAKE_REQUIRED_LIBRARIES("z") # pnglite requires libz
 
 ################################################################################
 # The core project files
 file (GLOB SRCS *.cpp )
 file (GLOB COMMON_SOURCE common/*.cpp)
 
-add_executable( ${PROJECT_NAME} ${SRCS} ${COMMON_SOURCE} ${GLAD_SOURCE})
-target_link_libraries( ${PROJECT_NAME} glfw)
+add_executable( 
+  ${PROJECT_NAME} 
+  ${SRCS} 
+  ${COMMON_SOURCE} 
+  ${GLAD_SOURCE}
+  ${PNGLITE_SOURCE}
+  )
+
+target_link_libraries( ${PROJECT_NAME} glfw z)
 
 add_custom_target(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>/data)
