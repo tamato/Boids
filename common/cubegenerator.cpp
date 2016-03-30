@@ -40,21 +40,26 @@ void CubeGenerator::generate()
     Normals.clear();
     Normals.resize(Stacks*Slices*6);
 
-    float scale = Scale * 2.0f;
+    float scale = Scale;
 
     // generate a plane that the verts will be based off of
     vector<glm::vec2> plane(Stacks*Slices);
+    for (unsigned int v=0; v<Stacks; ++v) {
+        for (unsigned int u=0; u<Slices; ++u) {
+            float x = scale * (u / float(Slices-1) - 0.5f);
+            float y = scale * (v / float(Stacks-1) - 0.5f);
+            plane[u + v*Slices] = glm::vec2(x,y);
+        }
+    }
 
     // z faces
     unsigned int offset0 = 0;
     unsigned int offset1 = Stacks*Slices;
     for (unsigned int v=0; v<Stacks; ++v) {
         for (unsigned int u=0; u<Slices; ++u) {
-            float x = scale * (u / float(Slices-1) - 0.5f);
-            float y = scale * (v / float(Stacks-1) - 0.5f);
-            float z = Scale * 1;
-
-            plane[u + v*Slices] = glm::vec2(x,y);
+            float x = plane[u + v*Slices][0];
+            float y = plane[u + v*Slices][1];
+            float z = scale * .5f;
 
             Positions[offset0 + u + v*Slices] = glm::vec3( x, y, z);
             Normals  [offset0 + u + v*Slices] = glm::vec3( 0, 0, 1);
@@ -68,14 +73,14 @@ void CubeGenerator::generate()
     offset1 += Stacks*Slices*2;
     for (unsigned int v=0; v<Stacks; ++v) {
         for (unsigned int u=0; u<Slices; ++u) {
-            float x = Scale * 1;
-            float y = plane[u + v*Slices][1];
-            float z = plane[u + v*Slices][0];
+            float x = scale * .5f;
+            float y = plane[u + v*Slices][0];
+            float z = plane[u + v*Slices][1];
 
             Positions[offset0 + u + v*Slices] = glm::vec3(-x, y, z);
-            Normals  [offset0 + u + v*Slices] = glm::vec3( 1, 0, 0);
+            Normals  [offset0 + u + v*Slices] = glm::vec3(-1, 0, 0);
             Positions[offset1 + u + v*Slices] = glm::vec3( x, y,-z);
-            Normals  [offset1 + u + v*Slices] = glm::vec3(-1, 0, 0);
+            Normals  [offset1 + u + v*Slices] = glm::vec3( 1, 0, 0);
         }
     }
 
@@ -85,17 +90,15 @@ void CubeGenerator::generate()
     for (unsigned int v=0; v<Stacks; ++v) {
         for (unsigned int u=0; u<Slices; ++u) {
             float x = plane[u + v*Slices][0];
-            float y = Scale * 1;
+            float y = scale * .5f;
             float z = plane[u + v*Slices][1];
 
             Positions[offset0 + u + v*Slices] = glm::vec3(x, y,-z);
             Normals  [offset0 + u + v*Slices] = glm::vec3(0, 1, 0);
             Positions[offset1 + u + v*Slices] = glm::vec3(x,-y, z);
             Normals  [offset1 + u + v*Slices] = glm::vec3(0,-1, 0);
-            // cout << glm::to_string(Positions[offset1 + u + v*Slices]) << endl;
         }
     }
-
 
     // 6 faces to a cube, 2 triangles each face, 3 verts per triangle
     Indices.clear();

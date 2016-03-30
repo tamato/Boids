@@ -53,6 +53,11 @@ ProgramObject LinesShader;
 bool MousePositionCapture = false;
 glm::vec2 PrevMousePos;
 
+Renderable Cube;
+ProgramObject CubeShader;
+Renderable Cutter;
+ProgramObject CutterShader;
+
 void errorCallback(int error, const char* description)
 {
     cerr << description << endl;
@@ -270,9 +275,9 @@ void initView(){
     float fovy = glm::radians(30.f);
     Projection = glm::perspective<float>(fovy, WINDOW_WIDTH/(float)WINDOW_HEIGHT, 0.1f, 1000.0f );
 
-    glm::vec3 diagonal = FlowVolume.PivotPoint - FlowVolume.AABBMin;
+    // glm::vec3 diagonal = FlowVolume.PivotPoint - FlowVolume.AABBMin;
     // float opposite = glm::length(diagonal);
-    float opposite = 101.f;
+    float opposite = 10.f;
     float adjacent = atan(fovy*.5f) / opposite;
     adjacent = 1.f / adjacent;
 
@@ -282,6 +287,24 @@ void initView(){
     Camera = glm::lookAt(eye, ViewTarget, glm::vec3(0,1,0));
 }
 
+void initCubes(){
+    ogle::CubeGenerator shape;
+    shape.scale(1.f);
+    shape.generate();
+
+    MeshBuffer buffer;
+    buffer.setVerts(shape.Positions.size(), (const float*)shape.Positions.data());
+    buffer.setNorms(shape.Positions.size(), (const float*)shape.Normals.data());
+
+    buffer.setIndices(shape.Indices.size(), shape.Indices.data());
+    Cube.init(buffer);
+
+    std::map<unsigned int, std::string> shaders;
+    shaders[GL_VERTEX_SHADER] = DataDirectory + "cube.vert";
+    shaders[GL_FRAGMENT_SHADER] = DataDirectory + "diffuse.frag";
+    CubeShader.init(shaders);
+}
+
 void init(int argc, char* argv[]){
     setDataDir(argc, argv);
     initGLFW();
@@ -289,12 +312,11 @@ void init(int argc, char* argv[]){
     ogle::Debug::init();
     png_init(0,0);
 
-    initBoids();
-//    initMesh();
-
-    //initTorus();
-    initLines();
-
+    // initBoids();
+    // initMesh();
+    // initTorus();
+    // initLines();
+    initCubes();
     initView();
 }
 
@@ -358,6 +380,21 @@ void renderLines(){
     glDisable(GL_CULL_FACE);
 }
 
+void renderCubes(){
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    // glEnable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
+
+    glm::mat3x3 normal_mat;
+
+    CubeShader.bind();
+    CubeShader.setMatrix44((const float*)&ProjectionView, "ProjectionView");
+    CubeShader.setMatrix33((const float*)&normal_mat, "NormalMat");
+
+    Cube.render();
+}
+
 void render(){
     glClearColor( 0,0,0,0 );
     glClearDepth( 1 );
@@ -365,8 +402,9 @@ void render(){
 
     // renderFlowVolume();
     // renderTorus();
-    renderLines();
-    renderBoids();
+    // renderLines();
+    // renderBoids();
+    renderCubes();
 }
 
 void runloop(){
@@ -392,6 +430,12 @@ void shutdown(){
     FlowVolume.shutdown();
     DebugTorus.shutdown();
     DebugLines.shutdown();
+
+    CubeShader.shutdown();
+    Cube.shutdown();
+
+    CutterShader.shutdown();
+    Cutter.shutdown();
 
     ogle::Debug::shutdown();
     glfwDestroyWindow(glfwWindow);

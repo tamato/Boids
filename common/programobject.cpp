@@ -74,6 +74,11 @@ void ProgramObject::setMatrix44(const float * mat, const char * name)
     glUniformMatrix4fv(Uniforms[name], 1, GL_FALSE, mat);
 }
 
+void ProgramObject::setMatrix33(const float * mat, const char * name)
+{
+    glUniformMatrix3fv(Uniforms[name], 1, GL_FALSE, mat);
+}
+
 void ProgramObject::bind()
 {
     glUseProgram(ProgramName);
