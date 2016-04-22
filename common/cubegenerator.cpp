@@ -40,15 +40,23 @@ void CubeGenerator::generate()
     Normals.clear();
     Normals.resize(Stacks*Slices*6);
 
+    TexCoords.clear();
+    TexCoords.resize(Stacks*Slices*6);
+
     float scale = Scale;
 
     // generate a plane that the verts will be based off of
     vector<glm::vec2> plane(Stacks*Slices);
+    vector<glm::vec2> uvs(Stacks*Slices);
     for (unsigned int v=0; v<Stacks; ++v) {
         for (unsigned int u=0; u<Slices; ++u) {
             float x = scale * (u / float(Slices-1) - 0.5f);
             float y = scale * (v / float(Stacks-1) - 0.5f);
             plane[u + v*Slices] = glm::vec2(x,y);
+
+            float s = u / float(Slices-1);
+            float t = v / float(Stacks-1);
+            uvs[u + v*Slices] = glm::vec2(s,t);
         }
     }
 
@@ -63,8 +71,11 @@ void CubeGenerator::generate()
 
             Positions[offset0 + u + v*Slices] = glm::vec3( x, y, z);
             Normals  [offset0 + u + v*Slices] = glm::vec3( 0, 0, 1);
+            TexCoords[offset0 + u + v*Slices] = uvs[u + v*Slices];
+            
             Positions[offset1 + u + v*Slices] = glm::vec3(-x, y,-z);
             Normals  [offset1 + u + v*Slices] = glm::vec3( 0, 0,-1);
+            TexCoords[offset1 + u + v*Slices] = uvs[u + v*Slices];
         }
     }
 
@@ -79,8 +90,11 @@ void CubeGenerator::generate()
 
             Positions[offset0 + u + v*Slices] = glm::vec3(-x, y, z);
             Normals  [offset0 + u + v*Slices] = glm::vec3(-1, 0, 0);
+            TexCoords[offset0 + u + v*Slices] = uvs[u + v*Slices];
+            
             Positions[offset1 + u + v*Slices] = glm::vec3( x, y,-z);
             Normals  [offset1 + u + v*Slices] = glm::vec3( 1, 0, 0);
+            TexCoords[offset1 + u + v*Slices] = uvs[u + v*Slices];
         }
     }
 
@@ -95,8 +109,11 @@ void CubeGenerator::generate()
 
             Positions[offset0 + u + v*Slices] = glm::vec3(x, y,-z);
             Normals  [offset0 + u + v*Slices] = glm::vec3(0, 1, 0);
+            TexCoords[offset0 + u + v*Slices] = uvs[u + v*Slices];
+            
             Positions[offset1 + u + v*Slices] = glm::vec3(x,-y, z);
             Normals  [offset1 + u + v*Slices] = glm::vec3(0,-1, 0);
+            TexCoords[offset1 + u + v*Slices] = uvs[u + v*Slices];
         }
     }
 

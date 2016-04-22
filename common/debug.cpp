@@ -39,6 +39,7 @@ void debugOutput(
          << "\tSeverity: "  << Debug::severityError(severity) << "\n"
          << "\tMessage: "   << message
          << endl;
+    exit(1);
 }
 
 void Debug::init()

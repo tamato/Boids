@@ -6,6 +6,7 @@
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/random.hpp"
 #include "glm/gtx/string_cast.hpp"
 #include "common/debug.h"
 #include "common/programobject.h"
@@ -55,8 +56,8 @@ glm::vec2 PrevMousePos;
 
 Renderable Cube;
 ProgramObject CubeShader;
-Renderable Cutter;
-ProgramObject CutterShader;
+glm::mat4x4 Models[10];
+glm::vec4 Colors[10];
 
 void errorCallback(int error, const char* description)
 {
@@ -277,7 +278,7 @@ void initView(){
 
     // glm::vec3 diagonal = FlowVolume.PivotPoint - FlowVolume.AABBMin;
     // float opposite = glm::length(diagonal);
-    float opposite = 10.f;
+    float opposite = 3.f;
     float adjacent = atan(fovy*.5f) / opposite;
     adjacent = 1.f / adjacent;
 
@@ -295,14 +296,23 @@ void initCubes(){
     MeshBuffer buffer;
     buffer.setVerts(shape.Positions.size(), (const float*)shape.Positions.data());
     buffer.setNorms(shape.Positions.size(), (const float*)shape.Normals.data());
+    buffer.setTexCoords(0, shape.Positions.size(), (const float*)shape.TexCoords.data());
 
     buffer.setIndices(shape.Indices.size(), shape.Indices.data());
     Cube.init(buffer);
 
     std::map<unsigned int, std::string> shaders;
     shaders[GL_VERTEX_SHADER] = DataDirectory + "cube.vert";
-    shaders[GL_FRAGMENT_SHADER] = DataDirectory + "diffuse.frag";
+    shaders[GL_FRAGMENT_SHADER] = DataDirectory + "cube.frag";
     CubeShader.init(shaders);
+
+    for (int i=0; i<10; ++i)
+    {   
+        glm::vec4 color(glm::linearRand(0.f,1.f),glm::linearRand(0.f,1.f),glm::linearRand(0.f,1.f), 1.f); 
+        glm::vec4 position(glm::linearRand(-1.f,1.f),glm::linearRand(-1.f,1.f),glm::linearRand(-1.f,1.f), 1);
+        Models[i][3] = position;
+        Colors[i] = color;
+    }
 }
 
 void init(int argc, char* argv[]){
@@ -386,13 +396,16 @@ void renderCubes(){
     // glEnable(GL_CULL_FACE);
     glDisable(GL_CULL_FACE);
 
-    glm::mat3x3 normal_mat;
-
     CubeShader.bind();
-    CubeShader.setMatrix44((const float*)&ProjectionView, "ProjectionView");
-    CubeShader.setMatrix33((const float*)&normal_mat, "NormalMat");
+    CubeShader.setMatrix44((const float*)&Camera, "View");
+    CubeShader.setMatrix44((const float*)&Projection, "Projection");
 
-    Cube.render();
+    for (int i=0; i<10; ++i)
+    {
+        CubeShader.setMatrix44((const float*)&Models[i], "Model");
+        CubeShader.setVec4((const float*)&Colors[i], "Diffuse");
+        Cube.render();
+    }
 }
 
 void render(){
@@ -433,9 +446,6 @@ void shutdown(){
 
     CubeShader.shutdown();
     Cube.shutdown();
-
-    CutterShader.shutdown();
-    Cutter.shutdown();
 
     ogle::Debug::shutdown();
     glfwDestroyWindow(glfwWindow);
