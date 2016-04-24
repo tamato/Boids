@@ -148,13 +148,15 @@ void mouseCallback(GLFWwindow* window, int btn, int action, int mods)
 
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    float dist = glm::length(CameraTarget - glm::vec3(Camera[3]));
+    glm::vec3 view_vec = CameraPosition - CameraTarget;
+
+    float dist = glm::length(view_vec);
+    view_vec /= dist;
+
     dist -= 10.f * float(yoffset);
-    glm::vec3 position = dist * -glm::vec3(Camera[2]);
-    Camera[3][0] = -glm::dot( glm::vec3(Camera[0]), position);
-    Camera[3][1] = -glm::dot( glm::vec3(Camera[1]), position);
-    Camera[3][2] =  glm::dot( glm::vec3(Camera[2]), position);
-    Camera[3][3] = 1.f;
+    CameraPosition = CameraTarget + view_vec * dist;
+
+    Camera = glm::lookAt(CameraPosition, CameraTarget, CameraUp);
 }
 
 void initGLFW(){
