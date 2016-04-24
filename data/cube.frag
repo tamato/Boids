@@ -47,11 +47,30 @@ vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
 }
 
 void main() {
-    vec3 N = perturb_normal(Normal, EyeVector, TexCoord);
+#if 0
+    vec3 N = texture( NormalMap, TexCoord ).xyz;
+    N = 2 * N - 1;
+    N.z = .7;
+    N = normalize(N);
+    vec3 T = normalize(dFdx(EyeVector));
+    vec3 B = normalize(cross(N,T));
+    T = normalize(cross(B,N));
 
+    mat3 TBN;
+    TBN[0] = vec3(T[0],B[0],N[0]);
+    TBN[1] = vec3(T[1],B[1],N[1]);
+    TBN[2] = vec3(T[2],B[2],N[2]);
+
+    vec3 E =TBN * -normalize(EyeVector);
+    vec3 L = TBN * LightDir;
+    vec3 H = normalize(E + L);
+#else
+    vec3 N = perturb_normal(Normal, EyeVector, TexCoord);
     vec3 E = -normalize(EyeVector);
     vec3 L = LightDir;
     vec3 H = normalize(E + L);
+#endif
+
     float df = max(0, dot(L, N));
     float sf = max(0, dot(H, N));
     sf = pow(sf, Shininess);
