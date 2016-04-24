@@ -18,7 +18,7 @@ namespace ogle
         void init( const std::map<unsigned int, std::string>& shaders );
 
         void bindAttribLoc(unsigned int index, const char * variable);
-        void setTexture(unsigned int textureStage, const char * name);
+        // void setTexture(unsigned int textureHandle, const char * name); Set textures with glActiveTexture & glBind
         void setFloat(float val, const char * name);
         void setVec4(const float * vec, const char * name);
         void setVec2(const float * vec, const char * name);

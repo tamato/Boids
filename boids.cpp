@@ -56,8 +56,10 @@ glm::vec2 PrevMousePos;
 
 Renderable Cube;
 ProgramObject CubeShader;
-glm::mat4x4 Models[10];
-glm::vec4 Colors[10];
+const unsigned int CubeCount = 10;
+glm::mat4x4 Models[CubeCount];
+glm::vec4 Colors[CubeCount];
+GLuint NormalMap = 0;
 
 void errorCallback(int error, const char* description)
 {
@@ -148,7 +150,7 @@ void mouseCallback(GLFWwindow* window, int btn, int action, int mods)
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
     float dist = glm::length(ViewTarget - glm::vec3(Camera[3]));
-    dist -= 50.f * float(yoffset);
+    dist -= 10.f * float(yoffset);
     glm::vec3 position = dist * -glm::vec3(Camera[2]);
     Camera[3][0] = -glm::dot( glm::vec3(Camera[0]), position);
     Camera[3][1] = -glm::dot( glm::vec3(Camera[1]), position);
@@ -179,7 +181,6 @@ void initGLFW(){
 
     glfwMakeContextCurrent(glfwWindow);
     glfwSwapInterval( 0 ); // Turn off vsync for benchmarking.
-    cout << "[!] Warning, be sure that vsync is disabled in NVidia controller panel." << endl;
 
     glfwSetTime( 0.0 );
     glfwSetKeyCallback(glfwWindow, keyCallback);
@@ -306,13 +307,32 @@ void initCubes(){
     shaders[GL_FRAGMENT_SHADER] = DataDirectory + "cube.frag";
     CubeShader.init(shaders);
 
-    for (int i=0; i<10; ++i)
+    for (int i=0; i<CubeCount; ++i)
     {   
+        float randval = 2;
         glm::vec4 color(glm::linearRand(0.f,1.f),glm::linearRand(0.f,1.f),glm::linearRand(0.f,1.f), 1.f); 
-        glm::vec4 position(glm::linearRand(-1.f,1.f),glm::linearRand(-1.f,1.f),glm::linearRand(-1.f,1.f), 1);
+        glm::vec4 position(glm::linearRand(-randval,randval),glm::linearRand(-randval,randval),glm::linearRand(-randval,randval), 1);
         Models[i][3] = position;
         Colors[i] = color;
     }
+
+    png_t img = {0};
+    png_open_file_read(&img, (DataDirectory + "NM13.png").c_str());
+    unsigned char* img_data;
+    img_data = new unsigned char[img.width * img.height * img.bpp];
+    png_get_data(&img, img_data);
+    png_close_file(&img);
+    
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &NormalMap);
+    glBindTexture(GL_TEXTURE_2D, NormalMap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width, img.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)img_data);
+    glFlush();
+    
+    glBindTexture(GL_TEXTURE_2D, 0);
+    delete [] img_data;
 }
 
 void init(int argc, char* argv[]){
@@ -396,11 +416,15 @@ void renderCubes(){
     // glEnable(GL_CULL_FACE);
     glDisable(GL_CULL_FACE);
 
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, NormalMap);
+
     CubeShader.bind();
     CubeShader.setMatrix44((const float*)&Camera, "View");
     CubeShader.setMatrix44((const float*)&Projection, "Projection");
+    CubeShader.setFloat(10, "Shininess");
 
-    for (int i=0; i<10; ++i)
+    for (int i=0; i<CubeCount; ++i)
     {
         CubeShader.setMatrix44((const float*)&Models[i], "Model");
         CubeShader.setVec4((const float*)&Colors[i], "Diffuse");
@@ -444,6 +468,7 @@ void shutdown(){
     DebugTorus.shutdown();
     DebugLines.shutdown();
 
+    glDeleteTextures(1, &NormalMap);
     CubeShader.shutdown();
     Cube.shutdown();
 

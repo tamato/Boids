@@ -40,6 +40,8 @@ void ProgramObject::init( const std::map<unsigned int, std::string>& shaders )
         glDeleteShader(shader);
     }
 
+    // std::string name = shaders.begin()->second;
+    // std::cout << "Collecting from: " << name << std::endl;
     collectUniforms();
     CleanedUp = false;
 }
@@ -47,11 +49,6 @@ void ProgramObject::init( const std::map<unsigned int, std::string>& shaders )
 void ProgramObject::bindAttribLoc(GLuint index, const char * variable)
 {
     glBindAttribLocation(ProgramName, index, variable);
-}
-
-void ProgramObject::setTexture(unsigned int textureStage, const char * name)
-{
-    glUniform1i(Uniforms[name], textureStage);
 }
 
 void ProgramObject::setFloat(float val, const char * name)
@@ -168,6 +165,7 @@ void ProgramObject::collectUniforms()
     int active_uniforms = 0;
     glGetProgramiv(ProgramName, GL_ACTIVE_UNIFORMS, &active_uniforms);
 
+    // std::cout << "\tCount: " << active_uniforms << std::endl;
     for (int i=0; i<active_uniforms; ++i) {
         const GLuint len = 50;
         GLsizei used_len = 0;
@@ -178,7 +176,7 @@ void ProgramObject::collectUniforms()
         name[used_len] = 0;
         GLint loc = glGetUniformLocation(ProgramName, name);
         Uniforms[std::string(name)] = loc;
-        // std::cout << name << " " << loc << std::endl;
+        // std::cout << "\t\tName: " << name << " loc: " << loc << std::endl;
     }
 
     // not using the following because the demos this code is used in knows the location of all the attributes.
