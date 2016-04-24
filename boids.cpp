@@ -8,6 +8,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/random.hpp"
 #include "glm/gtx/string_cast.hpp"
+#include "glm/gtx/rotate_vector.hpp"
 #include "common/debug.h"
 #include "common/programobject.h"
 #include "common/objloader.h"
@@ -40,7 +41,9 @@ glm::mat4x4 SceneBase;
 glm::mat4x4 Projection;
 glm::mat4x4 ProjectionView;
 
-glm::vec3 ViewTarget;
+glm::vec3 CameraTarget;
+glm::vec3 CameraPosition;
+glm::vec3 CameraUp;
 
 MeshObject FlowVolume;
 ProgramObject FlowVolumeShader;
@@ -103,27 +106,23 @@ void cursorCallback(GLFWwindow* window, double x, double y)
         glm::vec2 diff = curr - PrevMousePos;
         PrevMousePos = curr;
 
-        glm::vec3 rotation_axis = glm::vec3(diff.y, diff.x, 0.f);
+        glm::vec3 rotation_axis = glm::vec3(diff.y, -diff.x, 0.f);
         float mag = glm::length(rotation_axis);
         if (mag == 0) return;
 
-        rotation_axis = rotation_axis / mag;
-        glm::mat4x4 cam = glm::mat4x4(
-            Camera[0],
-            Camera[1],
-            Camera[2],
-            glm::vec4(ViewTarget,1)
-            );
+        rotation_axis = rotation_axis / mag; // normalize
 
-        float dist = glm::length(ViewTarget - glm::vec3(Camera[3]));
-        glm::mat4x4 rot;
-        rot = glm::rotate(rot, mag * 0.001f, rotation_axis);
-        Camera = rot * cam;
+        glm::vec3 view_vec = CameraPosition - CameraTarget;
+        view_vec = glm::rotate(view_vec, mag * 0.001f, rotation_axis);
+        
+        CameraPosition = CameraTarget + view_vec;
 
-        glm::vec3 position = dist * glm::vec3(Camera[2]);
-        position = position * glm::mat3x3(Camera);
-        Camera[3] = glm::vec4(position, 1.f);
-        Camera[3][2] *= -1.0f;
+        glm::vec3 view_dir = glm::normalize(view_vec);
+        glm::vec3 tmp = glm::cross(CameraUp, view_dir);
+        tmp = glm::normalize(tmp);
+        CameraUp = glm::normalize(glm::cross(view_dir, tmp));
+
+        Camera = glm::lookAt(CameraPosition, CameraTarget, CameraUp);
     }
 }
 
@@ -149,7 +148,7 @@ void mouseCallback(GLFWwindow* window, int btn, int action, int mods)
 
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    float dist = glm::length(ViewTarget - glm::vec3(Camera[3]));
+    float dist = glm::length(CameraTarget - glm::vec3(Camera[3]));
     dist -= 10.f * float(yoffset);
     glm::vec3 position = dist * -glm::vec3(Camera[2]);
     Camera[3][0] = -glm::dot( glm::vec3(Camera[0]), position);
@@ -283,10 +282,11 @@ void initView(){
     float adjacent = atan(fovy*.5f) / opposite;
     adjacent = 1.f / adjacent;
 
-    ViewTarget = glm::vec3(0);
+    CameraUp = glm::vec3(0,1,0);
+    CameraTarget = glm::vec3(0);
     glm::vec3 direction(0,0,1);
-    glm::vec3 eye = FlowVolume.PivotPoint + direction * adjacent;
-    Camera = glm::lookAt(eye, ViewTarget, glm::vec3(0,1,0));
+    CameraPosition = FlowVolume.PivotPoint + direction * adjacent;
+    Camera = glm::lookAt(CameraPosition, CameraTarget, CameraUp);
 }
 
 void initCubes(){
